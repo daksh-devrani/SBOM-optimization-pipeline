@@ -7,3 +7,11 @@ on:
   pull_request:
     branches:
       - main
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Checkout SCM"
+      uses: action/checkout@v4
