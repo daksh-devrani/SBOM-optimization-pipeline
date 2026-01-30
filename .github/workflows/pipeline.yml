@@ -1,0 +1,9 @@
+name: devops-pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
