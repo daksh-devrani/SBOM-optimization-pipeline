@@ -26,3 +26,9 @@ jobs:
           ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.PAT_TOKEN }}
           path: targetrepo
+      - name: Build Docker image from target repo
+        run: |
+          cd targetrepo
+          docker build -t targetrepo-image:latest .
+
+      
