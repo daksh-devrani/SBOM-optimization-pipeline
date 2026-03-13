@@ -13,42 +13,47 @@ from pydantic import BaseModel, Field
 
 
 class SyftLicense(BaseModel):
-    value: Optional[str] = None    # SPDX identifier e.g. "MIT"
+    value: Optional[str] = None
     spdxExpression: Optional[str] = None
-    type: Optional[str] = None     # "declared" or "concluded"
+    type: Optional[str] = None
 
 
 class SyftLocation(BaseModel):
     path: str
-    layerID: Optional[str] = None  # Docker layer digest
+    layerID: Optional[str] = None
+
+
+class SyftCPE(BaseModel):
+    cpe: str
+    source: Optional[str] = None
 
 
 class SyftArtifact(BaseModel):
-    """A single software component found by Syft."""
     id: str
     name: str
     version: str
-    type: str                      # "python", "deb", "npm", "go-module", etc.
-    foundBy: Optional[str] = None  # Which cataloger found this
+    type: str
+    foundBy: Optional[str] = None
     locations: list[SyftLocation] = Field(default_factory=list)
     licenses: list[SyftLicense] = Field(default_factory=list)
     language: Optional[str] = None
-    cpes: list[str] = Field(default_factory=list)   # CPE strings
-    purl: Optional[str] = None                       # Package URL
+    cpes: list[SyftCPE] = Field(default_factory=list)
+    purl: Optional[str] = None
 
 
 class SyftSource(BaseModel):
-    type: str              # "image", "directory", "file"
-    target: Optional[dict] = None  # Contains image name, digest, tags
+    type: str
+    target: Optional[dict] = None
+
+
+class SyftSchema(BaseModel):
+    version: Optional[str] = None
+    url: Optional[str] = None
 
 
 class SyftOutput(BaseModel):
-    """Top-level structure of `syft -o cyclonedx-json` output."""
-    schema_version: Optional[str] = Field(default=None, alias="schema")
+    schema: Optional[SyftSchema] = None
     artifacts: list[SyftArtifact] = Field(default_factory=list)
     source: Optional[SyftSource] = None
-    distro: Optional[dict] = None    # OS distro info
-    descriptor: Optional[dict] = None  # Syft version metadata
-
-    class Config:
-        populate_by_name = True
+    distro: Optional[dict] = None
+    descriptor: Optional[dict] = None
