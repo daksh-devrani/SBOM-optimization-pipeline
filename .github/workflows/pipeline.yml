@@ -88,6 +88,7 @@ jobs:
           LLM_PROVIDER: groq
         run: |
           cd ai_engine
+          mkdir -p ../ai-outputs
           python main.py
 
       - name: Upload AI Reports
@@ -95,3 +96,9 @@ jobs:
         with:
           name: ai-security-reports
           path: ./ai-outputs/
+     
+      - name: Upload Scan Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: scan-results
+          path: ./scan-results/
