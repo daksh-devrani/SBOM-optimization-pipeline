@@ -84,18 +84,17 @@ jobs:
           TRIVY_REPORT: ./scan-results/trivy.json
           SNYK_REPORT: ./scan-results/snyk.json
           SYFT_SBOM: ./scan-results/sbom.json
-          OUTPUT_DIR: ./ai-outputs
+          OUTPUT_DIR: ../ai-outputs
           LLM_PROVIDER: groq
         run: |
           cd ai_engine
-          mkdir -p ../ai-outputs
           python main.py
 
       - name: Upload AI Reports
         uses: actions/upload-artifact@v4
         with:
           name: ai-security-reports
-          path: ./ai-outputs/
+          path: ./ai-engine/
      
       - name: Upload Scan Reports
         uses: actions/upload-artifact@v4
