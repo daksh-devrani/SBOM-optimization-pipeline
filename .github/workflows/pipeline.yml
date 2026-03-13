@@ -73,6 +73,9 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
           ./bin/syft dir:targetrepo -o json > scan-results/sbom.json
 
+      - name: Install dependencies
+        run: pip install -r ai_engine/requirements.txt
+
       - name: Run AI Engine
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
