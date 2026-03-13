@@ -80,10 +80,10 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           TARGET_REPO: ${{ github.event.inputs.repo_name }}
-          SEMGREP_REPORT: ./scan-results/semgrep.json
-          TRIVY_REPORT: ./scan-results/trivy.json
-          SNYK_REPORT: ./scan-results/snyk.json
-          SYFT_SBOM: ./scan-results/sbom.json
+          SEMGREP_REPORT: ../scan-results/semgrep.json
+          TRIVY_REPORT: ../scan-results/trivy.json
+          SNYK_REPORT: ../scan-results/snyk.json
+          SYFT_SBOM: ../scan-results/sbom.json
           OUTPUT_DIR: ../ai-outputs
           LLM_PROVIDER: groq
         run: |
