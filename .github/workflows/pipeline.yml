@@ -1,4 +1,4 @@
-name: devops-pipeline
+name: devsecops-pipeline
 
 on:
   workflow_dispatch:
@@ -12,23 +12,83 @@ on:
       branch:
         required: true
         type: string
-      
+
 jobs:
   pipeline:
     runs-on: ubuntu-latest
+
     steps:
+
       - name: Checkout engine repo
         uses: actions/checkout@v4
-      - name: checkout target repo
+
+      - name: Checkout target repo
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.inputs.repo_owner }}/${{ github.event.inputs.repo_name }}
           ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.PAT_TOKEN }}
           path: targetrepo
-      - name: Build Docker image from target repo
+
+      - name: Create scan-results folder
+        run: mkdir scan-results
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Build Docker image
         run: |
           cd targetrepo
           docker build -t targetrepo-image:latest .
 
-      
+      - name: Run Semgrep
+        run: |
+          pip install semgrep
+          semgrep --config=auto targetrepo --json > scan-results/semgrep.json
+
+      - name: Run Snyk
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: |
+          npm install -g snyk
+          snyk test --json > scan-results/snyk.json || true
+
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: targetrepo
+          format: json
+          output: scan-results/trivy.json
+
+      - name: Generate SBOM
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
+          ./bin/syft dir:targetrepo -o json > scan-results/sbom.json
+
+      - name: Run AI Engine
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TARGET_REPO: ${{ github.event.inputs.repo_name }}
+          SEMGREP_REPORT: ./scan-results/semgrep.json
+          TRIVY_REPORT: ./scan-results/trivy.json
+          SNYK_REPORT: ./scan-results/snyk.json
+          SYFT_SBOM: ./scan-results/sbom.json
+          OUTPUT_DIR: ./ai-outputs
+          LLM_PROVIDER: groq
+        run: |
+          cd ai_engine
+          python main.py
+
+      - name: Upload AI Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-security-reports
+          path: ./ai-outputs/
