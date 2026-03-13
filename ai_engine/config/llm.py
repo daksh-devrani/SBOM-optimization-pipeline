@@ -1,24 +1,10 @@
-"""
-LLM client configuration.
-Supports Groq (CI/production) and Ollama (local dev) via env var switch.
-
-Usage:
-    from config.llm import get_llm
-    llm = get_llm()
-"""
-
 import os
+import httpx
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 
 
 def get_llm():
-    """
-    Returns the appropriate LLM client based on environment.
-
-    Set LLM_PROVIDER=ollama for local development.
-    Defaults to Groq (used in CI).
-    """
     provider = os.getenv("LLM_PROVIDER", "groq").lower()
 
     if provider == "ollama":
@@ -27,10 +13,18 @@ def get_llm():
             temperature=0,
         )
 
-    # Default: Groq
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        raise ValueError(
+            "GROQ_API_KEY is not set. "
+            "Add it to GitHub Actions secrets and pass via env: in your workflow step."
+        )
+
     return ChatGroq(
-        model=os.getenv("GROQ_MODEL", "llama3-70b-8192"),
-        api_key=os.getenv("GROQ_API_KEY"),
-        temperature=0,       # Deterministic output — critical for security tooling
+        model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),  # ← updated
+        api_key=api_key,
+        temperature=0,
         max_tokens=4096,
+        http_client=httpx.Client(timeout=60.0),
     )
