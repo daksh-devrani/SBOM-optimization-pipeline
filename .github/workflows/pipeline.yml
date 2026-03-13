@@ -95,7 +95,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ai-security-reports
-          path: ./ai_engine/ai-outputs/
+          path: ./ai-outputs/
       
       - name: Upload Scan Reports
         uses: actions/upload-artifact@v4
