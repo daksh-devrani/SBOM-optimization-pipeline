@@ -1,16 +1,28 @@
 name: devops-pipeline
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
+  workflow_dispatch:
+    inputs:
+      repo_owner:
+        required: true
+        type: string
+      repo_name:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
       
-
 jobs:
   pipeline:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout SCM
+      - name: Checkout engine repo
         uses: actions/checkout@v4
+      - name: checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.repo_owner }}/${{ github.event.inputs.repo_name }}
+          ref: ${{ github.event.inputs.branch }}
+          token: ${{ secrets.PAT_TOKEN }}
+          path: targetrepo
