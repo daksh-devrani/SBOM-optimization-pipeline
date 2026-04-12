@@ -1,0 +1,43 @@
+name: Validation Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r ai_engine/requirements.txt
+
+      - name: Run Syft to generate SBOM
+        run: syft packages dir:. --output json > sbom.json
+
+      - name: Run Trivy to scan for vulnerabilities
+        run: trivy fs --format json --output trivy.json .
+
+      - name: Run the validation pipeline
+        run: python ai_engine/main.py --sbom sbom.json --trivy trivy.json --repo . --output-dir research_outputs
+
+      - name: Upload validation outputs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-reports
+          path: research_outputs/
