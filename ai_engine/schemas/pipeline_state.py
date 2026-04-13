@@ -109,5 +109,29 @@ class PipelineState(BaseModel):
         description="Any non-fatal errors encountered during parsing or agent execution."
     )
 
+    # --- Inputs: paths for validation node ---
+    trivy_report_path: str = Field(
+        default="",
+        description="Filesystem path to Trivy JSON report (used by validation_node)."
+    )
+    sbom_report_path: str = Field(
+        default="",
+        description="Filesystem path to Syft SBOM JSON (used by validation_node)."
+    )
+    repo_path: str = Field(
+        default="",
+        description="Filesystem path to the cloned target repository (used by validation_node)."
+    )
+
+    # --- Output: Validation Agent ---
+    validation_report: Optional[dict] = Field(
+        default=None,
+        description="Serialized ValidationReport from the SBOM vulnerability validation pipeline."
+    )
+    validation_errors: list[str] = Field(
+        default_factory=list,
+        description="Non-fatal errors from the validation node."
+    )
+
     class Config:
         use_enum_values = True

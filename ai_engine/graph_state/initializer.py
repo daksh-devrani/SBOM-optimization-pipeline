@@ -33,6 +33,7 @@ def build_initial_state(
     syft_path:       str | None = None,
     dockerfile_path: str | None = None,
     target_repo:     str | None = None,
+    repo_path:       str | None = None,
 ) -> PipelineState:
     """
     Parse all scanner outputs and assemble initial PipelineState.
@@ -120,4 +121,8 @@ def build_initial_state(
         dockerfile_content=dockerfile_content,
         target_repo=target_repo,
         errors=errors,
+        # Validation node inputs — filesystem paths for the research pipeline
+        trivy_report_path=trivy_path or "",
+        sbom_report_path=syft_path or "",
+        repo_path=repo_path or "",
     )

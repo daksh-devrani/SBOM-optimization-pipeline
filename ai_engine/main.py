@@ -122,6 +122,8 @@ def main():
     syft_path        = os.getenv("SYFT_SBOM")
     dockerfile_path  = os.getenv("DOCKERFILE_PATH")
     target_repo      = os.getenv("TARGET_REPO")
+    # Filesystem path to the cloned target repo — used by validation_node
+    target_repo_path = os.getenv("TARGET_REPO_PATH")
     output_dir_str   = os.getenv("OUTPUT_DIR", "./outputs")
 
     logger.info(f"Target repo:  {target_repo or 'not set'}")
@@ -136,6 +138,7 @@ def main():
         "SonarQube":  sonarqube_path,
         "Syft":       syft_path,
         "Dockerfile": dockerfile_path,
+        "Repo path":  target_repo_path,
     }
     for name, path in report_paths.items():
         status = f"✅ {path}" if path else "⚠️  not provided"
@@ -152,6 +155,7 @@ def main():
             syft_path=syft_path,
             dockerfile_path=dockerfile_path,
             target_repo=target_repo,
+            repo_path=target_repo_path,
         )
     except Exception as e:
         logger.critical(f"State initialization failed: {e}")
@@ -215,6 +219,10 @@ def main():
     metadata = _build_pipeline_metadata(final_state)
     _write_json(output_dir, "pipeline-metadata.json", metadata)
 
+    # Validation report (from validation_node — may be None if paths were missing)
+    if final_state.validation_report:
+        _write_json(output_dir, "validation-report.json", final_state.validation_report)
+
     # ── Step 4: Print summary to CI logs ─────────────────────────────────────
     logger.info("\n" + "=" * 60)
     logger.info("PIPELINE COMPLETE")
@@ -238,6 +246,14 @@ def main():
     logger.info(f"  📄 sbom-optimization.md")
     logger.info(f"  📄 fix-suggestions.json")
     logger.info(f"  📄 pipeline-metadata.json")
+    if final_state.validation_report:
+        logger.info(f"  📄 validation-report.json")
+    if final_state.validation_errors:
+        logger.warning(
+            f"\n⚠️  {len(final_state.validation_errors)} validation error(s):"
+        )
+        for err in final_state.validation_errors:
+            logger.warning(f"  - {err}")
 
     if final_state.errors:
         logger.warning(f"\n⚠️  {len(final_state.errors)} non-fatal error(s) during run:")

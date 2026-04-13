@@ -10,15 +10,19 @@ its own output fields back into it.
 
 from langgraph.graph import StateGraph, START, END
 
-from nodes.fix_node     import fix_node
-from nodes.summary_node import summary_node
-from nodes.sbom_node    import sbom_node
+from nodes.fix_node        import fix_node
+from nodes.summary_node    import summary_node
+from nodes.sbom_node       import sbom_node
+from nodes.validation_node import validation_node
 from schemas.pipeline_state import PipelineState
 
 
 def build_graph():
     """
     Build and compile the LangGraph pipeline.
+
+    Execution order:
+        START → fix_node → summary_node → sbom_node → validation_node → END
 
     Returns:
         A compiled LangGraph app ready to invoke with .invoke(state_dict)
@@ -28,15 +32,17 @@ def build_graph():
     graph = StateGraph(PipelineState)
 
     # ── Register nodes ────────────────────────────────────────────────────────
-    graph.add_node("fix_node",     fix_node)
-    graph.add_node("summary_node", summary_node)
-    graph.add_node("sbom_node",    sbom_node)
+    graph.add_node("fix_node",        fix_node)
+    graph.add_node("summary_node",    summary_node)
+    graph.add_node("sbom_node",       sbom_node)
+    graph.add_node("validation_node", validation_node)
 
     # ── Define edges (execution order) ────────────────────────────────────────
-    # START → fix_node → summary_node → sbom_node → END
-    graph.add_edge(START,          "fix_node")
-    graph.add_edge("fix_node",     "summary_node")
-    graph.add_edge("summary_node", "sbom_node")
-    graph.add_edge("sbom_node",    END)
+    # START → fix_node → summary_node → sbom_node → validation_node → END
+    graph.add_edge(START,             "fix_node")
+    graph.add_edge("fix_node",        "summary_node")
+    graph.add_edge("summary_node",    "sbom_node")
+    graph.add_edge("sbom_node",       "validation_node")
+    graph.add_edge("validation_node", END)
 
     return graph.compile()
