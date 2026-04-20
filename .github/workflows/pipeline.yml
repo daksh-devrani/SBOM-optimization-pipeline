@@ -1,5 +1,7 @@
 name: devsecops-pipeline
 
+# Manual run: scan another repo (needs PAT_TOKEN + inputs).
+# Push / PR: scan this repository on main or research_ai_engine (no PAT).
 on:
   workflow_dispatch:
     inputs:
@@ -12,6 +14,14 @@ on:
       branch:
         required: true
         type: string
+  push:
+    branches:
+      - main
+      - research_ai_engine
+  pull_request:
+    branches:
+      - main
+      - research_ai_engine
 
 jobs:
   pipeline:
@@ -22,7 +32,8 @@ jobs:
       - name: Checkout engine repo
         uses: actions/checkout@v4
 
-      - name: Checkout target repo
+      - name: Checkout external target repository
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.inputs.repo_owner }}/${{ github.event.inputs.repo_name }}
@@ -30,8 +41,17 @@ jobs:
           token: ${{ secrets.PAT_TOKEN }}
           path: targetrepo
 
+      - name: Use this repository as scan target (push / pull_request)
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          mkdir -p targetrepo
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='targetrepo' \
+            ./ targetrepo/
+
       - name: Create scan-results folder
-        run: mkdir scan-results
+        run: mkdir -p scan-results
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -83,7 +103,7 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          TARGET_REPO: ${{ github.event.inputs.repo_name }}
+          TARGET_REPO: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.repo_name || github.repository }}
           TARGET_REPO_PATH: ../targetrepo
           SEMGREP_REPORT: ../scan-results/semgrep.json
           TRIVY_REPORT: ../scan-results/trivy.json
@@ -109,7 +129,7 @@ jobs:
         with:
           name: validation-reports
           path: ./research-outputs/
-      
+
       - name: Upload Scan Reports
         uses: actions/upload-artifact@v4
         if: always()
