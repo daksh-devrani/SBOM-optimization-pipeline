@@ -1,3 +1,5 @@
+# Prefer the repo-root lockfile: from the repository root run `uv sync` (uses .venv).
+# Dependencies are defined in ../pyproject.toml; this file is kept for reference only.
 langgraph
 langchain
 langchain-core

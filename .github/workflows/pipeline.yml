@@ -34,9 +34,12 @@ jobs:
         run: mkdir scan-results
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version-file: ".python-version"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -74,7 +77,7 @@ jobs:
           ./bin/syft dir:targetrepo -o json > scan-results/sbom.json
 
       - name: Install dependencies
-        run: pip install -r ai_engine/requirements.txt
+        run: uv sync --frozen
 
       - name: Run AI Engine
         env:
@@ -90,17 +93,15 @@ jobs:
           LLM_PROVIDER: groq
           RESEARCH_OUTPUT_DIR: ../research-outputs
         run: |
-          cd ai_engine
-          mkdir -p ../ai-outputs
-          mkdir -p ../research-outputs
-          python main.py
+          mkdir -p ai-outputs research-outputs
+          uv run --directory ai_engine python main.py
 
       - name: Upload AI Reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ai-security-reports
-          path: ./ai_engine/ai-outputs/
+          path: ./ai-outputs/
 
       - name: Upload Validation Reports
         uses: actions/upload-artifact@v4
