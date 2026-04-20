@@ -93,14 +93,6 @@ jobs:
           RESEARCH_OUTPUT_DIR: ../research-outputs
         run: uv run --directory ai_engine python main.py
 
-      - name: Run Research Pipeline
-        run: |
-          uv run python /research-validation-pipeline/ai_engine/main.py \
-            --sbom scan-results/sbom.json \
-            --trivy scan-results/trivy.json \
-            --repo targetrepo \
-            --output-dir research-outputs
-
       - name: Debug output directories
         if: always()
         run: |
