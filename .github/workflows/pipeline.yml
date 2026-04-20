@@ -1,5 +1,4 @@
 name: devsecops-pipeline
-
 on:
   workflow_dispatch:
     inputs:
@@ -12,13 +11,10 @@ on:
       branch:
         required: true
         type: string
-
 jobs:
   pipeline:
     runs-on: ubuntu-latest
-
     steps:
-
       - name: Checkout engine repo
         uses: actions/checkout@v4
 
@@ -31,7 +27,10 @@ jobs:
           path: targetrepo
 
       - name: Create scan-results folder
-        run: mkdir scan-results
+        run: mkdir -p scan-results
+
+      - name: Create output directories
+        run: mkdir -p ai-outputs research-outputs
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -92,9 +91,14 @@ jobs:
           OUTPUT_DIR: ../ai-outputs
           LLM_PROVIDER: groq
           RESEARCH_OUTPUT_DIR: ../research-outputs
+        run: uv run --directory ai_engine python main.py
+
+      - name: Debug output directories
+        if: always()
         run: |
-          mkdir -p ai-outputs research-outputs
-          uv run --directory ai_engine python main.py
+          echo "=== ai-outputs ===" && ls -la ai-outputs/ || echo "Directory missing or empty"
+          echo "=== research-outputs ===" && ls -la research-outputs/ || echo "Directory missing or empty"
+          echo "=== scan-results ===" && ls -la scan-results/ || echo "Directory missing or empty"
 
       - name: Upload AI Reports
         uses: actions/upload-artifact@v4
@@ -102,6 +106,7 @@ jobs:
         with:
           name: ai-security-reports
           path: ./ai-outputs/
+          if-no-files-found: warn
 
       - name: Upload Validation Reports
         uses: actions/upload-artifact@v4
@@ -109,10 +114,12 @@ jobs:
         with:
           name: validation-reports
           path: ./research-outputs/
-      
+          if-no-files-found: warn
+
       - name: Upload Scan Reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: scan-results
           path: ./scan-results/
+          if-no-files-found: warn
