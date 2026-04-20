@@ -24,13 +24,14 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from schemas.pipeline_state import PipelineState  # noqa: E402
 from research.pipeline.run_validation import run_pipeline  # noqa: E402
 from research.utils.logger import get_logger  # noqa: E402
 
 logger = get_logger(__name__)
 
 
-def validation_node(state: dict) -> dict:
+def validation_node(state: PipelineState | dict) -> dict:
     """
     LangGraph node: SBOM Vulnerability Validation Agent.
 
@@ -38,15 +39,16 @@ def validation_node(state: dict) -> dict:
     using static analysis + rule engine + optional LLM validation.
 
     Args:
-        state: LangGraph state dict (from PipelineState.model_dump()).
+        state: LangGraph state as PipelineState or dict (merged graph state).
 
     Returns:
         Dict with 'validation_report' and 'validation_errors' keys to
         merge back into PipelineState.
     """
-    trivy_report_path: str = state.get("trivy_report_path", "")
-    sbom_report_path: str = state.get("sbom_report_path", "")
-    repo_path: str = state.get("repo_path", "")
+    ps = state if isinstance(state, PipelineState) else PipelineState.model_validate(state)
+    trivy_report_path: str = ps.trivy_report_path or ""
+    sbom_report_path: str = ps.sbom_report_path or ""
+    repo_path: str = ps.repo_path or ""
 
     # ── Guard: skip if required paths are missing ────────────────────────────
     if not trivy_report_path or not sbom_report_path or not repo_path:

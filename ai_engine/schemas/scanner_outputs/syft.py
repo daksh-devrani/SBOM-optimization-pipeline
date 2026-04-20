@@ -9,7 +9,7 @@ Parse this into SBOM using parsers/syft_parser.py (next step).
 """
 
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SyftLicense(BaseModel):
@@ -52,7 +52,11 @@ class SyftSchema(BaseModel):
 
 
 class SyftOutput(BaseModel):
-    schema: Optional[SyftSchema] = None
+    """Syft CycloneDX JSON root; the JSON `schema` field is aliased to avoid clashing with BaseModel."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    cyclone_schema: Optional[SyftSchema] = Field(default=None, alias="schema")
     artifacts: list[SyftArtifact] = Field(default_factory=list)
     source: Optional[SyftSource] = None
     distro: Optional[dict] = None

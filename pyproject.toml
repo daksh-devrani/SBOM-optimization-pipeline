@@ -7,6 +7,8 @@ requires-python = ">=3.13"
 dependencies = [
     "groq>=0.37.1",
     "langchain>=1.2.10",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.3.0",
     "langchain-groq>=1.1.2",
     "langchain-ollama>=1.0.1",
     "langgraph>=1.0.10",
@@ -14,3 +16,12 @@ dependencies = [
     "pydantic>=2.12.5",
     "python-dotenv>=1.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["ai_engine"]
+testpaths = ["ai_engine/tests"]
