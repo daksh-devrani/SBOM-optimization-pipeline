@@ -18,13 +18,23 @@ jobs:
       - name: Checkout engine repo
         uses: actions/checkout@v4
 
-      - name: Checkout target repo
+      - name: Checkout external target repository
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.inputs.repo_owner }}/${{ github.event.inputs.repo_name }}
           ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.PAT_TOKEN }}
           path: targetrepo
+
+      - name: Use this repository as scan target (push / pull_request)
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          mkdir -p targetrepo
+          rsync -a --delete \
+            --exclude='.git' \
+            --exclude='targetrepo' \
+            ./ targetrepo/
 
       - name: Create scan-results folder
         run: mkdir -p scan-results
@@ -82,7 +92,7 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          TARGET_REPO: ${{ github.event.inputs.repo_name }}
+          TARGET_REPO: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.repo_name || github.repository }}
           TARGET_REPO_PATH: ../targetrepo
           SEMGREP_REPORT: ../scan-results/semgrep.json
           TRIVY_REPORT: ../scan-results/trivy.json
